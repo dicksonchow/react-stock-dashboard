@@ -20,11 +20,11 @@
 }
 
 .table{
-    color: white;
+    color: black;
 }
 
 .table thead th{
-    border-bottom: 1px solid white !important;
+    border-bottom: 1px solid black !important;
 }
 
 .green-text{

@@ -13,6 +13,7 @@
 }
 
 .stock-code__value{
+    color: 'white';
     text-transform: uppercase;
 }
 

@@ -1,12 +1,25 @@
 import React from 'react';
+import { Button, FormControl, TextField } from '@material-ui/core';
+import { makeStyles, withStyles } from '@material-ui/core/styles';
 import stock from '../apis/stock';
 import '../css/SearchCard.css';
 import '../css/styles.css';
 import { FaSearch } from 'react-icons/fa'
 
+const styles = theme => ({
+    button: {
+
+    },
+    textField: {
+        "text-transform": "uppercase"
+    },
+});
+
 class SearchCard extends React.Component{
 
     state = {
+        stockCode: '',
+        isButtonDisabled: true,
         search_stockArray: [],
         loading_api: false
     };
@@ -41,13 +54,8 @@ class SearchCard extends React.Component{
     //        the tableData and graphData and sends it back up to App.js as props.
     //        It also makes the input null, and also checks if the stock code exists
     //        within the API.
-    sendSearchResult = async (torf, value) => {
-        let stockValue;
-        if(torf){
-            stockValue = document.querySelector(".stock-code__value").value.toUpperCase();
-        }else{
-            stockValue = value;
-        }
+    sendSearchResult = async () => {
+        const stockValue = this.state.stockCode;
 
         let startDate = Math.round(new Date().getTime() / 1000);
         let endDate = startDate - (72 * 3600);
@@ -69,7 +77,7 @@ class SearchCard extends React.Component{
         });
 
         if(table_response){
-            this.setState({ loading_api: true });
+            this.setState({ isButtonDisabled: true });
         }
 
         const graph_response = await stock.get('/stock/candle', {
@@ -86,42 +94,46 @@ class SearchCard extends React.Component{
             search_stockArray: this.state.search_stockArray.concat(stockValue),
         }, () => {
             if(checkForExist){
-                if(table_response.data.c == 0 && table_response.data.h == 0 && table_response.data.l == 0 && table_response.data.o == 0 && table_response.data.pc == 0 && table_response.data.t == 0){
+                if(table_response.data.c === 0 && table_response.data.h === 0 && table_response.data.l === 0 && table_response.data.o === 0 && table_response.data.pc === 0 && table_response.data.t === 0){
                     this.props.sendSearchGraphResult("no_data", '');
                 }else{
-                    this.props.sendSearchGraphResult(true, {stockValue: stockValue, response: graph_response.data});
+                    this.props.sendSearchGraphResult(true, {stockValue, response: graph_response.data});
                     this.props.sendSearchResult(table_response.data);
-                    this.setState({ loading_api: false });
+                    this.setState({ isButtonDisabled: false });
                 }
-                document.querySelector(".stock-code__value").value = '';
+                this.setState({ stockCode: "" });
             };
         });
     };
 
-    // @desc: validateBtn checks for the onKeyUp change of the input and disables
-    //        or removes the disable of the button.
+    changeToUpperCase = () => {
+        if (this.state.stockCode && this.state.stockCode.length >= 1) {
+            this.setState({ stockCode: this.state.stockCode.toUpperCase() });
+        }
+    }
 
-    // @param: val => string of the input
-    validateBtn = (val) => {
-        let btnDOM = document.querySelector(".btn-search");
-        val === '' || val.length > 4 ? btnDOM.disabled = true : btnDOM.disabled = false;
-    };
+    onTextFieldChange = (stockCode) => {
+        this.setState({ stockCode });
+        if (stockCode.length > 1) {
+            this.setState({ isButtonDisabled: false });
+        }
+    }
 
     render(){
+        const { classes } = this.props;
         return (
             <div className="card card-container search">
                 <div className="card-body">
                     <h2 className="h6 mb-0">Search Stock Code:</h2>
-                    <input type="text" 
-                           className="form-control stock-code__value" 
-                           placeholder="Stock Code (e.g. AAPL)" 
-                           onKeyUp={ (e) => this.validateBtn(e.target.value) }>
-                    </input>
-                    <button className="btn btn-secondary w-100 btn-search" onClick={ () => this.sendSearchResult(true, '') } disabled={ this.loading_api }>Search Results<FaSearch /></button>
+                    <TextField className={classes.textField} required label="Stock Code" placeholder="e.g. AAPL" variant="filled" value={this.state.stockCode}
+                        onChange={ (e) => this.onTextFieldChange(e.target.value) }
+                        onKeyUp={ (e) => this.changeToUpperCase() }>
+                    </TextField>
+                    <Button className="btn btn-secondary w-100 btn-search" onClick={ () => this.sendSearchResult(true, '') } disabled={this.state.isButtonDisabled}>Search Results<FaSearch /></Button>
                 </div>
             </div>
         );
     };
 };
 
-export default SearchCard;
+export default withStyles(styles)(SearchCard);
